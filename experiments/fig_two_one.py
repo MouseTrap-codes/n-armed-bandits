@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -16,6 +18,8 @@ effectively never happen.
 
 Caption from Sutton and Bartos
 """
+RESULTS_DIR = Path("experiments/results")
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # setup
 num_runs = 2000
@@ -87,4 +91,5 @@ plt.title("% Optimal Action over Time")
 plt.legend()
 
 plt.tight_layout()
+plt.savefig(RESULTS_DIR / "fig_two_one.png", dpi=300, bbox_inches="tight")
 plt.show()

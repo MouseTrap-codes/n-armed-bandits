@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -10,6 +12,10 @@ armed testbed. Both methods used a constant step-size parameter, α = 0.1.
 
 Caption from Sutton and Barto
 """
+
+RESULTS_DIR = Path("experiments/results")
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # setup
 num_runs = 2000
@@ -55,4 +61,5 @@ plt.title("% Optimal Action over Time")
 plt.legend()
 
 plt.tight_layout()
+plt.savefig(RESULTS_DIR / "fig_two_two.png", dpi=300, bbox_inches="tight")
 plt.show()

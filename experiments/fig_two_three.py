@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -12,6 +14,9 @@ an explanation of this spike?
 
 Caption from Sutton and Barto
 """
+
+RESULTS_DIR = Path("experiments/results")
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # setup
 num_runs = 2000
@@ -55,4 +60,5 @@ plt.xlabel("Steps")
 plt.ylabel("Average Reward")
 plt.title("Average Reward over Time")
 plt.legend()
+plt.savefig(RESULTS_DIR / "fig_two_three.png", dpi=300, bbox_inches="tight")
 plt.show()

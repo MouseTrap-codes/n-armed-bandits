@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -12,6 +14,9 @@ a particular algorithm at a particular setting of its parameter.
 
 Caption from Sutton and Barto
 """
+
+RESULTS_DIR = Path("experiments/results")
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # parameters
 epsilons = 1 / (2.0 ** np.arange(7, 0, -1))  # [1/128 to 1]
@@ -116,4 +121,5 @@ plt.legend()
 
 plt.tight_layout()
 plt.title("Figure 2.5: Parameter Study of Bandit Algorithms")
+plt.savefig(RESULTS_DIR / "fig_two_five.png", dpi=300, bbox_inches="tight")
 plt.show()

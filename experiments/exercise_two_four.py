@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -14,6 +16,9 @@ like Figure 2.1 for an action-value method using sample averages, incrementally 
 
 Caption from Sutton and Barto
 """
+
+RESULTS_DIR = Path("experiments/results")
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # setup
 num_runs = 2000
@@ -76,4 +81,5 @@ plt.title("% Optimal Action over Time")
 plt.legend()
 
 plt.tight_layout()
+plt.savefig(RESULTS_DIR / "exercise_two_four.png", dpi=300, bbox_inches="tight")
 plt.show()
