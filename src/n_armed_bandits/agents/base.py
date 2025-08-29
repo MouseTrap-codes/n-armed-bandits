@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 
 class Agent(ABC):
@@ -7,7 +6,7 @@ class Agent(ABC):
         self.n = n
 
     @abstractmethod
-    def select_action(self) -> Optional[int]:
+    def select_action(self) -> int:
         pass
 
     @abstractmethod
