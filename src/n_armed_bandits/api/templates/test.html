@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/main.css')}}">
+    <title>N-Armed Bandits Simulator</title>
+</head>
+<body>
+    <div class="container">
+        <div class="elements">
+            <div class="display"></div>
+
+            <form action="/run" method="post">
+                <div class="row0">
+                    <div class="input-group">
+                        <label for="model">Model</label>
+                        <select name="model" id="model" class="btn select-btn btn-long">
+                            <option value="epsilon-greedy">ε-Greedy</option>
+                            <option value="ucb">Upper Confidence Bound (UCB)</option>
+                            <option value="gradient">Gradient Bandit</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="environment">Environment</label>
+                        <select name="environment" id="environment" class="btn select-btn btn-long">
+                            <option value="stationary">Stationary</option>
+                            <option value="nonstationary">Nonstationary</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="row1">
+                    <div class="input-group">
+                        <label for="n_arms"># Arms</label>
+                        <input type="number" id="n_arms" name="n_arms" class="btn " placeholder="# Arms" min="2" max="10" value="10">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="n_steps"># Steps</label>
+                        <input type="number" id="n_steps" name="n_steps" class="btn " placeholder="# Steps" min="10" max="1000" value="1000" step="1">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="mean_q">Mean Reward (μ)</label>
+                        <input type="number" id="mean_q" name="mean_q" class="btn " placeholder="Mean q*" step="0.1" value="0.0">                </div>
+
+                    <div class="input-group">
+                        <label for="std_q">Reward Std. Dev. (σ)</label>
+                        <input type="number" id="std_q" name="std_q" class="btn " placeholder="Std q*" step="0.1"  value="1.0">
+                    </div>
+                </div>
+
+                <div class="row2">
+                    <div class="input-group">
+                        <label for="epsilon">Exploration Rate (ε)</label>
+                        <input type="number" id="epsilon" name="epsilon" class="btn " placeholder="ε" step="0.01" min="0" max="1" value="0.1">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="alpha">Learning Rate (α)</label>
+                        <input type="number" id="alpha" name="alpha" class="btn " placeholder="α" step="0.01" min="0" max="1" value="0.1">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="initial_q">Initial Value (Q₀)</label>
+                        <input type="number" id="initial_q" name="initial_q" class="btn" placeholder="Initial q" step="0.1" value="0.0">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="ucb_c">UCB Exploration (c)</label>
+                        <input type="number" id="ucb_c" name="ucb_c" class="btn" placeholder="UCB c" step="0.1" value="2.0">
+                    </div>
+                </div>
+
+                <div class="row3">
+                    <button type="submit" class="btn runBtn">RUN SIMULATION</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

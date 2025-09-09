@@ -16,7 +16,7 @@ class GradientBanditAgent(Agent):
         self.t = 0
 
     def select_action(self):
-        # calculate probaiilities using softmax distribution
+        # calculate probabilities using softmax distribution
         self.pi = softmax(self.h)
 
         # select action from sampling from the softmax distribution
