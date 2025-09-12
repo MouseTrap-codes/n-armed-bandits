@@ -76,7 +76,7 @@ def run_simulation(
     mean_q: float,
     std_q: float,
     params: dict,
-    num_runs: int = 200,
+    num_runs: int = 50,
 ):
     avg_rewards = np.zeros(num_steps)
     pct_optimal_action = np.zeros(num_steps)
