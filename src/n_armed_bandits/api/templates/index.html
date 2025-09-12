@@ -4,13 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=VT323&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
     <title>N-Armed Bandits Simulator</title>
 </head>
 <body>
     <div class="container">
         <div class="elements">
-            <div class="display"></div>
+            <div class="display">
+              <div id ="avg_plot" class="plot"></div>
+              <div id="opt_plot" class="plot"></div>
 
+              <div id="displayOverlay" class="display-overlay" aria-live="polite">
+                <div class="spinner" aria-hidden="true"></div>
+                <div class="msg">Simulating</div>
+              </div>
+            </div>
             <form action="/run" method="post">
                 <div class="row0">
                     <div class="input-group">
@@ -35,53 +44,258 @@
                 <div class="row1">
                     <div class="input-group">
                         <label for="n_arms"># Arms</label>
-                        <input type="number" id="n_arms" name="n_arms" class="btn " placeholder="# Arms" min="2" max="10" value="10">
+                        <input type="number" id="n_arms" name="n_arms" class="btn " min="2" max="10" value="10">
                     </div>
 
                     <div class="input-group">
                         <label for="n_steps"># Steps</label>
-                        <input type="number" id="n_steps" name="n_steps" class="btn " placeholder="# Steps" min="10" max="1000" value="1000" step="1">
+                        <input type="number" id="n_steps" name="n_steps" class="btn "  min="10" max="1000" value="1000" step="1">
                     </div>
 
                     <div class="input-group">
                         <label for="mean_q">Mean Reward (μ)</label>
-                        <input type="number" id="mean_q" name="mean_q" class="btn " placeholder="Mean q*" step="0.1" value="0.0">                </div>
+                        <input type="number" id="mean_q" name="mean_q" class="btn "  step="0.1" value="0.0">                </div>
 
                     <div class="input-group">
                         <label for="std_q">Reward Std. Dev. (σ)</label>
-                        <input type="number" id="std_q" name="std_q" class="btn " placeholder="Std q*" step="0.1"  value="1.0">
+                        <input type="number" id="std_q" name="std_q" class="btn " step="0.1"  value="1.0">
                     </div>
                 </div>
 
                 <div class="row2">
                     <div class="input-group">
                         <label for="epsilon">Exploration Rate (ε)</label>
-                        <input type="number" id="epsilon" name="epsilon" class="btn " placeholder="ε" step="0.01" min="0" max="1" value="0.1">
+                        <input type="number" id="epsilon" name="epsilon" class="btn "  step="0.01" min="0" max="1" value="0.1">
                     </div>
 
                     <div class="input-group">
                         <label for="alpha">Learning Rate (α)</label>
-                        <input type="number" id="alpha" name="alpha" class="btn " placeholder="α" step="0.01" min="0" max="1" value="0.1">
+                        <input type="number" id="alpha" name="alpha" class="btn "  step="0.01" min="0" max="1" value="0.1">
                     </div>
 
                     <div class="input-group">
                         <label for="initial_q">Initial Value (Q₀)</label>
-                        <input type="number" id="initial_q" name="initial_q" class="btn" placeholder="Initial q" step="0.1" value="0.0">
+                        <input type="number" id="initial_q" name="initial_q" class="btn"  step="0.1" value="0.0">
                     </div>
 
                     <div class="input-group">
                         <label for="ucb_c">UCB Exploration (c)</label>
-                        <input type="number" id="ucb_c" name="ucb_c" class="btn" placeholder="UCB c" step="0.1" value="2.0">
+                        <input type="number" id="ucb_c" name="ucb_c" class="btn"  step="0.1" value="2.0">
                     </div>
                 </div>
 
                 <div class="row3">
                     <button type="submit" class="btn runBtn">RUN SIMULATION</button>
+                    <button type="button" id="resetBtn" class="btn resetBtn">RESET</button>
                 </div>
 
             </form>
         </div>
     </div>
 
+    <script>
+      const css = getComputedStyle(document.documentElement);
+      const THEME = {
+        screen:  css.getPropertyValue('--screen-green').trim(),
+        panel:   css.getPropertyValue('--panel-blue').trim(),
+        line1:   css.getPropertyValue('--button-highlight').trim() || '#ff8c3c',
+        line2:   css.getPropertyValue('--neon-orange').trim()     || '#ff6600',
+        text:    '#f5f5f5',
+        grid:    'rgba(255,255,255,0.22)',
+        axis:    'rgba(255,255,255,0.9)'
+      };
+
+      function baseLayout({title, yTitle, yRange, stepsLen}) {
+        return {
+          paper_bgcolor: 'rgba(0,0,0,0)',
+          plot_bgcolor:  'rgba(0,0,0,0)',
+          font: { family: 'Inter, system-ui, -apple-system, Segoe UI', color: THEME.text },
+          title: { text: title, x: 0.01, font: { size: 16 } },
+          xaxis: {
+            title: 'Step',
+            range: [1, stepsLen],
+            gridcolor: THEME.grid, zerolinecolor: THEME.grid,
+            linecolor: THEME.axis, tickcolor: THEME.axis
+          },
+          yaxis: {
+            title: yTitle, range: yRange,
+            gridcolor: THEME.grid, zerolinecolor: THEME.grid,
+            linecolor: THEME.axis, tickcolor: THEME.axis
+          },
+          margin: { t: 42, r: 24, b: 44, l: 56 },
+          hovermode: 'x unified',
+          hoverlabel: { bgcolor: THEME.panel, bordercolor: THEME.panel }
+        };
+      }
+
+      const PLOT_CFG = { responsive: true, displayModeBar: false };
+    </script>
+
+    <script>
+      function showDisplayOverlay(text = 'Simulating…') {
+        const ov = document.getElementById('displayOverlay');
+        ov.classList.remove('is-error');
+        ov.querySelector('.msg').textContent = text;
+        ov.style.display = 'flex';
+      }
+      function showDisplayError(text = 'Something went wrong') {
+        const ov = document.getElementById('displayOverlay');
+        ov.classList.add('is-error');
+        ov.querySelector('.msg').textContent = text;
+        ov.style.display = 'flex';
+      }
+      function hideDisplayOverlay() {
+        const ov = document.getElementById('displayOverlay');
+        ov.style.display = 'none';
+      }
+    </script>
+
+    <script>
+      document.querySelector("form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+
+        showDisplayOverlay("Simulating...")
+
+        try {
+          const body = new FormData(form);
+          const res  = await fetch(form.action, { method: "POST", body });
+          const data = await res.json();
+          if (!data?.ok) throw new Error("Simulation failed");
+
+          const steps  = data.steps;
+          const avgRewards  = data.avg_rewards;     // array
+          const pctOptimal  = data.pct_optimal;     // array
+
+          // y-range for reward
+          const yMin = Math.min(...avgRewards);
+          const yMax = Math.max(...avgRewards);
+          const pad  = Math.max(1e-6, 0.1 * (yMax - yMin || 1));
+          const rewardRange = [yMin - pad, yMax + pad];
+
+          // Average Reward plot
+          Plotly.react(
+            "avg_plot",
+            [{
+              x: steps, y: avgRewards, mode: "lines", name: "Average reward",
+              line: { width: 2.5, shape: "spline", smoothing: 0.55, color: THEME.line1 }
+            }],
+            baseLayout({
+              title: "Average Reward over Time",
+              yTitle: "Average Reward",
+              yRange: rewardRange,
+              stepsLen: steps.length
+            }),
+            PLOT_CFG
+          );
+
+          // % Optimal plot
+          Plotly.react(
+            "opt_plot",
+            [{
+              x: steps, y: pctOptimal, mode: "lines", name: "% optimal",
+              line: { width: 2.5, shape: "spline", smoothing: 0.55, color: THEME.line2 }
+            }],
+            baseLayout({
+              title: "% Optimal Action over Time",
+              yTitle: "% Optimal Action",
+              yRange: [0, 100],
+              stepsLen: steps.length
+            }),
+            PLOT_CFG
+          );
+
+          hideDisplayOverlay();
+
+        } catch (err) {
+          const msg = (err && err.message) ? err.message : String(err);
+          showDisplayError(`Error: ${msg}`);
+        }
+      });
+    </script>
+
+    <script>
+      const modelSel = document.getElementById('model');
+      const envSel   = document.getElementById('environment');
+
+      const epsInp   = document.getElementById('epsilon');
+      const alphaInp = document.getElementById('alpha');
+      const initInp  = document.getElementById('initial_q');
+      const ucbCInp  = document.getElementById('ucb_c');
+
+      const toggles = [epsInp, alphaInp, initInp, ucbCInp];
+      toggles.forEach(inp => {
+        if (!inp.dataset.default) {
+          inp.dataset.default = (inp.defaultValue ?? inp.value ?? '').toString();
+        }
+      });
+
+      function setEnabled(input, enabled, { clear=false, title="" } = {}) {
+        const group = input.closest('.input-group');
+        const wasDisabled = input.disabled;
+
+        input.disabled = !enabled;
+        if (!enabled && clear) input.value = "";
+        if (enabled && wasDisabled) input.value = input.dataset.default ?? input.defaultValue ?? "";
+
+        if (title) input.title = title;
+
+        if (group) group.classList.toggle('is-disabled', !enabled);
+      }
+
+      function syncFields() {
+        const model = modelSel.value;
+        const env   = envSel.value;
+        const isUCB = model === 'ucb';
+        const isEG  = model === 'epsilon-greedy';
+        const isGB  = model === 'gradient';
+
+        // Start by enabling everything, then disable what doesn't apply
+        setEnabled(epsInp,   true);
+        setEnabled(alphaInp, true);
+        setEnabled(initInp,  true);
+        setEnabled(ucbCInp,  true);
+
+        if (isEG) {
+          setEnabled(ucbCInp, false, { clear:true, title:"UCB only" });
+          setEnabled(epsInp,   true,  { title:"Exploration rate ε" });
+          setEnabled(alphaInp, true,  { title:"Blank = sample average (α = 1/N)" });
+          setEnabled(initInp,  true,  { title:"Optimistic initialization Q₀" });
+        }
+
+        if (isUCB) {
+          setEnabled(epsInp,  false, { clear:true, title:"UCB ignores ε" });
+          setEnabled(initInp, false, { clear:true, title:"Not used by UCB" });
+          setEnabled(ucbCInp, true,  { title:"Exploration parameter c" });
+
+          if (env === 'stationary') {
+            setEnabled(alphaInp, false, { clear:true, title:"Sample-average (α=1/N) used on stationary problems" });
+          } else {
+            setEnabled(alphaInp, true, { title:"Constant step-size α for nonstationary problems" });
+          }
+        }
+
+        if (isGB) {
+          setEnabled(epsInp,  false, { clear:true, title:"Gradient bandit ignores ε" });
+          setEnabled(initInp, false, { clear:true, title:"Not used by gradient bandit" });
+          setEnabled(ucbCInp, false, { clear:true, title:"UCB only" });
+          setEnabled(alphaInp, true, { title:"Step-size α for preference update" });
+        }
+      }
+
+      modelSel.addEventListener('change', syncFields);
+      envSel  .addEventListener('change', syncFields);
+      syncFields();
+  </script>
+
+  <script>
+      document.getElementById('resetBtn').addEventListener('click', () => {
+      hideDisplayOverlay?.();
+      Plotly.purge('avg_plot'); document.getElementById('avg_plot').innerHTML = '';
+      Plotly.purge('opt_plot'); document.getElementById('opt_plot').innerHTML = '';
+      const form = document.getElementById('simForm'); form?.reset();
+      syncFields?.();
+    });
+  </script>
 </body>
 </html>

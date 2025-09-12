@@ -9,6 +9,17 @@
   --smoky-slate: rgb(117, 109, 98);
 }
 
+:root {
+  --panel-blue: rgb(28, 63, 142);
+  --screen-green: rgb(20, 120, 65);
+  --neon-orange: rgb(255, 102, 0);
+  --button-orange: rgb(204, 80, 0);
+  --border-black: rgb(0, 0, 0);
+  --button-highlight: rgb(255, 140, 60);
+  --button-dark: rgb(80, 75, 70);
+  --app-bg: rgb(15, 15, 20);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -20,16 +31,18 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    background-color: rgb(116, 118, 121);
+    font-family: 'serif';
 }
 
 .container {
     margin-top: 50px;
     width: 1000px;
     height: 900px;
-    background-color: var(--texas-tan);
+    background-color: var(--panel-blue);
     display: flex;
     justify-content: center;
-    border: 3px solid var(--dusty-clay);
+    border: 3px solid var(--border-black);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     border-radius: 12px;
     padding: 20px;
@@ -37,19 +50,91 @@ body {
 
 .display {
     height:600px;
-    background-color: var(--off-white-paper);
-    color: var(--espresso);
-    border: 2px inset var(--dusty-clay);
+    background-color: var(--screen-green);
+    color: var(--plot-accent-orange);
+    border: 2px inset var(--border-black);
     border-radius: 6px;
     margin-top: 10px;
     padding: 20px 16px;
     font-size: 2rem;
-    font-family: 'Courier New', Courier, monospace;
     text-align: right;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08);
     overflow-x: auto;
     white-space: nowrap;
 }
+
+.display {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+    padding: 12px;
+    box-sizing: border-box;
+    position: relative;
+  }
+
+  .plot {
+    width: 100%;
+    height: 100%;
+    /* border: 0; */
+    /* background: transparent; */
+  }
+
+  .display-overlay {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: color-mix(in srgb, var(--screen-green) 75%, black 10%);
+    backdrop-filter: blur(1px);
+    border-radius: 6px;
+    z-index: 5;
+  }
+
+  .display-overlay .spinner {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 3px solid var(--button-orange);
+    border-top-color: var(--button-highlight);
+    animation: spin .8s linear infinite;
+  }
+
+  .display-overlay .msg {
+    font: 600 14px/1.2 Inter, system-ui, --apple-system, Segoe UI;
+    color: #fff;
+    letter-spacing: .3px;
+    text-shadow: 0 1px 0 rgba(0,0,0,.25);
+  }
+
+  /* error */
+  .display-overlay.is-error {
+    background: rgba(120, 20, 20, 0.70);
+  }
+
+  .display-overlay.is-error .spinner{
+    border-color: var(--button-dark);
+    border-top-color: #ff7777;
+  }
+
+  @keyframes spin{ to{ transform: rotate(360deg)}}
+
+  .resetBtn {
+    border: solid 2px var(--border-black);
+    border-radius: 8px;
+    box-shadow: 0 3px var(--border-black);
+    font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--button-dark);
+  }
+
+
+
+
+
 
 .elements {
     display: flex;
@@ -67,34 +152,28 @@ body {
     margin-top: 12px;
 }
 
-/* .btn {
-    height: 70px;
-    width: 70px;
-
-} */
 
 .btn,
 .runBtn {
-    border: solid 2px var(--dusty-clay);
+    border: solid 2px var(--border-black);
     border-radius: 8px;
-    box-shadow: 0 3px var(--dusty-clay);
+    box-shadow: 0 3px var(--border-black);
     font-size: 24px;
-    font-family: 'Courier New', Courier, monospace;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
 .runBtn {
-    background-color: var(--smoky-slate);
-    color: var(--vintage-ivory);
+    background-color: var(--button-dark);
+    color: var(--border-black);
     font-weight: 600;
     width: 152px;
 }
 
 select.btn {
-   background-color: var(--retro-orange);
-    color: var(--espresso);
+   background-color: var(--button-orange);
+    color: var(--border-black);
     font-weight: 900;
     text-align: center;
     text-align-last: center;
@@ -110,28 +189,71 @@ select.btn {
   box-shadow: none;
 }
 
-/* css grid */
+.btn:disabled,
+select.btn:disabled,
+input.btn:disabled {
+  background: var(--button-dark);
+  color: #dcd7d3;
+  border-color: var(--border-black);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.input-group.is-disabled label {
+  color: #dcd7d3;
+}
+.input-group.is-disabled .btn {
+  background: var(--button-dark);
+  color: #dcd7d3;
+}
+
 form { width: 100%; }
 
 .row0, .row1, .row2, .row3 {
   display: grid;
   width: 100%;
-  max-width: 860px;       /* same as .elements width */
+  max-width: 860px;
   gap: 12px;
-  margin: 12px auto 0;    /* center rows */
+  margin: 12px auto 0;
 }
 
 
-/* Per-row column counts */
-.row0 { grid-template-columns: repeat(2, 1fr); }  /* model + environment */
-.row1 { grid-template-columns: repeat(4, 1fr); }  /* arms, steps, mean, std */
-.row2 { grid-template-columns: repeat(4, 1fr); }  /* epsilon, alpha, Q0, c */
-.row3 { grid-template-columns: repeat(3, 1fr); }  /* center the RUN button */
+.row0 { grid-template-columns: repeat(2, 1fr); }
+.row1 { grid-template-columns: repeat(4, 1fr); }
+.row2 { grid-template-columns: repeat(4, 1fr); }
+.row3 { grid-template-columns: repeat(3, 1fr); }
 
-/* Center the RUN button in row3 without changing HTML */
 .row3 .runBtn { grid-column: 2 / span 1; }
 
-/* Labels stack neatly above controls */
+.resetBtn {
+  background: var(--button-dark);
+  color: var(--border-black);
+  font-weight: 700;
+
+  /* size */
+  height: 44px;          /* smaller than your 70px controls */
+  padding: 0 14px;
+  font-size: 16px;
+  box-shadow: 0 2px var(--border-black);
+
+  /* prevent grid from stretching it full width */
+  width: auto;
+  justify-self: start;    /* or 'end' if you want it flush right in col 3 */
+  align-self: center;
+
+  /* keep the same rounded/bordered look */
+  border: 2px solid var(--border-black);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resetBtn:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
 .input-group {
   display: flex;
   flex-direction: column;
@@ -142,11 +264,11 @@ form { width: 100%; }
 .input-group label {
   font-size: 14px;
   font-weight: 600;
-  color: var(--espresso);
+  color: var(--vintage-ivory);
   margin-left: 4px;
+  font-family: 'Inter', sans-serif;
 }
 
-/* Make controls fill their grid cell */
 .input-group .btn,
 .select-btn,
 .runBtn {
@@ -154,25 +276,21 @@ form { width: 100%; }
   height: 70px;
 }
 
-/* Keep inputs looking like calculator keys (light face) */
 input.btn {
-  background-color: var(--faded-pumpkin);
-  color: var(--vintage-ivory);
+  background-color: var(--button-orange);
+  color: var(--border-black);
   text-align: center;
   font-weight: 600;
 }
 
-/* Optional: keep selects button-like */
 .select-btn {
-  background-color: var(--retro-orange);
-  color: var(--espresso);
+  background-color: var(--button-orange);
+  color: var(--vintage-ivory);
   font-weight: 900;
   white-space: nowrap;
   padding: 0 12px;
-  /* appearance: none; */
 }
 
-/* Hide number input spinners for a cleaner look */
 input[type="number"].btn { -moz-appearance: textfield; }
 input[type="number"].btn::-webkit-outer-spin-button,
 input[type="number"].btn::-webkit-inner-spin-button {

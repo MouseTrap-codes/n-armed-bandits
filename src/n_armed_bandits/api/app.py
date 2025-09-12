@@ -6,6 +6,10 @@ from n_armed_bandits.agents.gradient import GradientBanditAgent
 from n_armed_bandits.agents.ucb import UCBAgent
 from n_armed_bandits.envs import NArmedTestbed, NonstationaryTestbed
 
+model_map = {"epsilon-greedy": "epsilon_greedy", "ucb": "ucb", "gradient": "gradient"}
+
+env_map = {"stationary": "stationary", "nonstationary": "nonstationary"}
+
 
 def to_int(x, d=None):
     try:
@@ -31,22 +35,22 @@ def to_bool(x, d=False):
 app = Flask(__name__)
 
 
-# ----- factories (match your dropdowns) -----
-def load_agent(model: str, n: int, params: dict):
-    if model == "Epsilon Greedy":
+def load_agent(model_key: str, n: int, params: dict):
+    model = model_map.get((model_key or "").strip().lower())
+    if model == "epsilon_greedy":
         return EpsilonGreedyAgent(
             n=n,
             epsilon=to_float(params.get("epsilon"), 0.1),
             alpha=to_float(params.get("alpha")),  # None => sample-average updates
             initial_estimates=to_float(params.get("initial_estimates"), 0.0),
         )
-    elif model == "Upper Confidence Bound (UCB)":
+    elif model == "ucb":
         return UCBAgent(
             n=n,
-            c=to_float(params.get("c"), 2.0),
+            c=to_float(params.get("ucb_c"), 2.0),
             alpha=to_float(params.get("alpha")),  # optional constant-α
         )
-    elif model == "Gradient Bandit":
+    elif model == "gradient":
         return GradientBanditAgent(
             n=n,
             alpha=to_float(params.get("alpha"), 0.1),
@@ -55,12 +59,44 @@ def load_agent(model: str, n: int, params: dict):
     raise ValueError(f"Unknown model: {model}")
 
 
-def load_env(env: str, n: int, mean: float, std: float):
-    if env == "Stationary":
+def load_env(env_key: str, n: int, mean: float, std: float):
+    env = env_map.get((env_key or "").strip().lower())
+    if env == "stationary":
         return NArmedTestbed(n=n, mean=mean, std=std)
-    elif env == "Nonstationary":
+    elif env == "nonstationary":
         return NonstationaryTestbed(n=n, mean=mean, std=std)
     raise ValueError(f"Unknown environment: {env}")
+
+
+def run_simulation(
+    model_key: str,
+    env_key: str,
+    num_arms: int,
+    num_steps: int,
+    mean_q: float,
+    std_q: float,
+    params: dict,
+    num_runs: int = 200,
+):
+    avg_rewards = np.zeros(num_steps)
+    pct_optimal_action = np.zeros(num_steps)
+
+    for run in range(num_runs):
+        agent = load_agent(model_key, num_arms, params)
+        testbed = load_env(env_key, num_arms, mean_q, std_q)
+        for t in range(num_steps):
+            action = agent.select_action()
+            reward = testbed.get_reward(action)
+            agent.update(action, reward)
+
+            avg_rewards[t] += reward
+            pct_optimal_action[t] += action == testbed.get_optimal_action()
+
+    avg_rewards /= num_runs
+    pct_optimal_action /= num_runs
+    pct_optimal_action *= 100.0
+
+    return avg_rewards, pct_optimal_action
 
 
 @app.route("/", methods=["GET"])
@@ -71,83 +107,38 @@ def form():
 @app.route("/run", methods=["POST"])
 def run_once():
     # core params from dropdowns/inputs
-    model = request.form.get("model", "Epsilon Greedy")
-    env_name = request.form.get("env", "Stationary")
+    model = request.form.get("model", "epsilon-greedy")
+    env = request.form.get("environment", "stationary")
     n_arms = to_int(request.form.get("n_arms"), 10)
     n_steps = to_int(request.form.get("n_steps"), 1000)
-    mean = to_float(request.form.get("mean"), 0.0)
-    std = to_float(request.form.get("std"), 1.0)
+    mean = to_float(request.form.get("mean_q"), 0.0)
+    std = to_float(request.form.get("std_q"), 1.0)
 
     # hyperparams
     params = {
         "epsilon": request.form.get("epsilon"),
         "alpha": request.form.get("alpha"),
-        "initial_estimates": request.form.get("initial_estimates"),
-        "c": request.form.get("c"),
-        "use_baseline": request.form.get("use_baseline"),
+        "initial_estimates": request.form.get("initial_q"),
+        "ucb_c": request.form.get("ucb_c"),
     }
 
-    # build env + agent
-    env = load_env(env_name, n_arms, mean, std)
-    agent = load_agent(model, n_arms, params)
-
-    # simulate
-    actions, rewards = [], []
-    optimal_hits = 0
-
-    for _ in range(n_steps):
-        a = int(agent.select_action())
-        r = float(env.get_reward(a))
-        agent.update(a, r)
-
-        actions.append(a)
-        rewards.append(r)
-
-        # track optimal % if env provides argmax of true q*
-        try:
-            if a == int(env.get_optimal_action()):
-                optimal_hits += 1
-        except Exception:
-            pass
-
-    avg_reward = float(np.mean(rewards)) if rewards else 0.0
-    optimal_pct = float(optimal_hits / n_steps) if n_steps else 0.0
-
-    # expose internal learning state for teaching UI
-    # (Epsilon/UCBAgent: q; GradientBandit: h preferences, plus pi if you want)
-    q_est = None
-    for attr in ("q", "h", "Q", "H", "preferences"):
-        if hasattr(agent, attr):
-            arr = getattr(agent, attr)
-            try:
-                q_est = [float(x) for x in arr]
-            except Exception:
-                pass
-            break
-
-    pi = getattr(agent, "pi", None)
-    if isinstance(pi, np.ndarray):
-        pi = pi.tolist()
-
-    # true means (JSON-friendly)
-    q_star = getattr(env, "q_star", None)
-    if isinstance(q_star, np.ndarray):
-        q_star = q_star.tolist()
+    avg_rewards, pct_optimal = run_simulation(
+        model_key=model,
+        env_key=env,
+        num_arms=n_arms,
+        num_steps=n_steps,
+        mean_q=mean,
+        std_q=std,
+        params=params,
+    )
+    steps = list(range(1, n_steps + 1))
 
     return jsonify(
         {
             "ok": True,
-            "model": model,
-            "env": env_name,
-            "n_arms": n_arms,
-            "n_steps": n_steps,
-            "avg_reward": avg_reward,
-            "optimal_pct": optimal_pct,
-            "actions": actions,
-            "rewards": rewards,
-            "q_est": q_est,  # agent estimates or preferences
-            "pi": pi,  # gradient bandit policy (if applicable)
-            "q_star": q_star,  # true action values
+            "steps": steps,
+            "avg_rewards": avg_rewards.tolist(),
+            "pct_optimal": pct_optimal.tolist(),
         }
     )
 
