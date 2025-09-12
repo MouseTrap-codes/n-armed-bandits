@@ -129,9 +129,7 @@
       }
 
       const PLOT_CFG = { responsive: true, displayModeBar: false };
-    </script>
 
-    <script>
       function showDisplayOverlay(text = 'Simulating…') {
         const ov = document.getElementById('displayOverlay');
         ov.classList.remove('is-error');
@@ -148,9 +146,7 @@
         const ov = document.getElementById('displayOverlay');
         ov.style.display = 'none';
       }
-    </script>
 
-    <script>
       document.querySelector("form").addEventListener("submit", async (e) => {
         e.preventDefault();
         const form = e.currentTarget;
@@ -212,9 +208,7 @@
           showDisplayError(`Error: ${msg}`);
         }
       });
-    </script>
 
-    <script>
       const modelSel = document.getElementById('model');
       const envSel   = document.getElementById('environment');
 
@@ -286,9 +280,7 @@
       modelSel.addEventListener('change', syncFields);
       envSel  .addEventListener('change', syncFields);
       syncFields();
-  </script>
 
-  <script>
       document.getElementById('resetBtn').addEventListener('click', () => {
       hideDisplayOverlay?.();
       Plotly.purge('avg_plot'); document.getElementById('avg_plot').innerHTML = '';
