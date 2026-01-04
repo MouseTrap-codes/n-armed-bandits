@@ -29,6 +29,3 @@ web/.eslintcache
 web/npm-debug.log*
 web/yarn-debug.log*
 web/yarn-error.log*
-
-experiments/results/**
-!experiments/results/.gitkeep
